@@ -1,0 +1,47 @@
+version: 2.1
+
+orbs:
+  path-filtering: circleci/path-filtering@0.0.2
+
+jobs:
+  generate_config:
+    docker:
+      - image: cimg/base:2021.05
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: install jsonnet
+          command: |
+            cd /tmp
+            curl -sL https://github.com/google/jsonnet/releases/download/v0.17.0/jsonnet-bin-v0.17.0-linux.tar.gz | tar zxvf -
+            mkdir -p ~/bin
+            install jsonnet* ~/bin/
+      - run:
+          name: generate config
+          working_directory: ~/repo/.circleci
+          command: |
+            jsonnet config_foo.jsonnet > config_foo.yml
+            jsonnet config_bar.jsonnet > config_bar.yml
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - generate_config
+
+      - path-filtering/filter:
+          base-revision: main
+          config-path: .circleci/config_foo.yml
+          mapping: |
+            foo/.* run_foo true
+          requires:
+            - generate_config
+
+      - path-filtering/filter:
+          base-revision: main
+          config-path: .circleci/config_bar.yml
+          mapping: |
+            bar/.* run_bar true
+          requires:
+            - generate_config
