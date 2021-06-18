@@ -3,6 +3,13 @@ local common = import 'common.libsonnet';
 {
   version: '2.1',
 
+  parameters: {
+    run_foo: {
+      type: 'boolean',
+      default: false,
+    },
+  },
+
   jobs: {
     run_foo: {
       docker: [
@@ -16,9 +23,10 @@ local common = import 'common.libsonnet';
             command: 'echo "this is foo!!"',
           },
         },
-        common.say_hello,
+        common.job_step_say_hello,
       ],
     },
+    pass: common.job_pass,
   },
 
   workflows: {
@@ -26,6 +34,12 @@ local common = import 'common.libsonnet';
     run_foo: {
       jobs: [
         'run_foo',
+      ],
+    },
+    pass: {
+      when: '<< pipeline.parameters.run_foo >>',
+      jobs: [
+        'pass',
       ],
     },
   },
